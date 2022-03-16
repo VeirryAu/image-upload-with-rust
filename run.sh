@@ -1,0 +1,1 @@
+ROCKET_PORT=4000 cargo watch -x run

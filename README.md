@@ -21,6 +21,6 @@ ROCKET_PORT=4000 cargo watch -x run
 cross build --release
 ```
 
-## 14. License
+## 4. License
 
 Licensed under the MIT License, Copyright © 2022 Veirry Augusman. See [LICENSE](https://github.com/VeirryAu/image-upload-with-rust/blob/master/LICENSE) for more information.

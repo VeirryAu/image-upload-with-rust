@@ -33,6 +33,10 @@ use rocket_multipart_form_data::{
     MultipartFormData, MultipartFormDataField, MultipartFormDataOptions,
 };
 
+use rocket::http::Method;
+
+use rocket_cors::{AllowedOrigins, CorsOptions};
+
 #[get("/")]
 fn index() -> &'static str {
     "Hello, world!"
@@ -299,7 +303,18 @@ fn upload_fingerprint_image(content_type: &ContentType, form_data: Data) -> Json
 }
 
 fn main() {
+    let cors = CorsOptions::default()
+    .allowed_origins(AllowedOrigins::all())
+    .allowed_methods(
+        vec![Method::Get, Method::Post, Method::Patch]
+            .into_iter()
+            .map(From::from)
+            .collect(),
+    )
+    .allow_credentials(true);
+
     rocket::ignite()
+        .attach(cors.to_cors().unwrap())
         .mount(
             "/",
             routes![index, upload_custom_image, upload_fingerprint_image],

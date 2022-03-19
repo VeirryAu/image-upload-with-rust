@@ -9,6 +9,8 @@ extern crate image;
 
 use std::path::Path;
 
+use image::DynamicImage;
+
 use std::thread;
 
 use std::fs;
@@ -60,14 +62,13 @@ struct ResponseUpload {
 }
 
 fn compress_image(
-    path: String,
+    img_clone: &DynamicImage,
     width: u32,
     height: u32,
     _suffix: &str,
     custom_path_file: String,
     file_random: String,
 ) {
-    let img_clone = image::open(path).unwrap();
     let img_main = img_clone.resize(width, height, Gaussian);
 
     let mut main_file_name: String = file_random.clone();
@@ -79,6 +80,10 @@ fn compress_image(
     let _absolute_path: String = format!("{}/{}", custom_file, main_file_name);
 
     img_main.save(_absolute_path).unwrap();
+
+    drop(main_file_name);
+    drop(custom_file);
+    drop(img_main);
 }
 
 fn upload_image(
@@ -195,13 +200,14 @@ fn upload_image(
 
                         thread::spawn(move || {
                             let im = image::open(thread_path).unwrap();
+                            std::thread::sleep(std::time::Duration::from_secs(2));
                             let pat = Arc::clone(&abs_path);
                             let ptfi = Arc::clone(&custom_path_file_arc);
                             let fra = Arc::clone(&file_random_arc);
 
                             // MAIN IMAGE
                             compress_image(
-                                pat.to_string(),
+                                &im,
                                 im.dimensions().1 * 70 / 100,
                                 im.dimensions().1 * 70 / 100,
                                 "main",
@@ -211,7 +217,7 @@ fn upload_image(
 
                             // SMALL IMAGE
                             compress_image(
-                                pat.to_string(),
+                                &im,
                                 im.dimensions().1 * 25 / 100,
                                 im.dimensions().1 * 25 / 100,
                                 "small",
@@ -221,7 +227,7 @@ fn upload_image(
 
                             // MEDIUM IMAGE
                             compress_image(
-                                pat.to_string(),
+                                &im,
                                 im.dimensions().1 / 2,
                                 im.dimensions().1 / 2,
                                 "medium",
@@ -231,7 +237,7 @@ fn upload_image(
 
                             // CROPPED IMAGE
                             compress_image(
-                                pat.to_string(),
+                                &im,
                                 250,
                                 300,
                                 "cropped",
@@ -241,13 +247,22 @@ fn upload_image(
 
                             // COMMERCE IMAGE
                             compress_image(
-                                pat.to_string(),
+                                &im,
                                 500,
                                 500,
                                 "commerce",
                                 ptfi.to_string(),
                                 fra.to_string(),
                             );
+
+                            drop(im);
+                            drop(pat);
+                            drop(ptfi);
+                            drop(fra);
+
+                            drop(abs_path);
+                            drop(custom_path_file_arc);
+                            drop(file_random_arc);
                         });
                     }
 
@@ -261,6 +276,13 @@ fn upload_image(
                         },
                     };
 
+                    drop(file_field);
+                    drop(_content_type);
+                    drop(_file_name);
+                    drop(now);
+                    drop(new_file_name);
+                    drop(list_image);
+                    drop(custom_path_home);
                     Some("respon")
                 }
                 None => None,
@@ -280,38 +302,40 @@ fn upload_custom_image(
     content_type: &ContentType,
     form_data: Data,
 ) -> Json<ResponseUpload> {
-    Json(upload_image(
+    let respon = upload_image(
         _id,
         compress,
         folder,
         content_type,
         form_data,
         "image".to_string(),
-    ))
+    );
+    Json(respon)
 }
 
 #[post("/fingerprint/upload", data = "<form_data>")]
 fn upload_fingerprint_image(content_type: &ContentType, form_data: Data) -> Json<ResponseUpload> {
-    Json(upload_image(
+    let respon = upload_image(
         "fingerprint".to_string(),
         Some("0".to_string()),
         Some("".to_string()),
         content_type,
         form_data,
         "fingerprint".to_string(),
-    ))
+    );
+    Json(respon)
 }
 
 fn main() {
     let cors = CorsOptions::default()
-    .allowed_origins(AllowedOrigins::all())
-    .allowed_methods(
-        vec![Method::Get, Method::Post, Method::Patch]
-            .into_iter()
-            .map(From::from)
-            .collect(),
-    )
-    .allow_credentials(true);
+        .allowed_origins(AllowedOrigins::all())
+        .allowed_methods(
+            vec![Method::Get, Method::Post, Method::Patch]
+                .into_iter()
+                .map(From::from)
+                .collect(),
+        )
+        .allow_credentials(true);
 
     rocket::ignite()
         .attach(cors.to_cors().unwrap())

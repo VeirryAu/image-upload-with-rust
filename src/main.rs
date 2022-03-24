@@ -122,7 +122,7 @@ fn upload_image(
                     let file_name_format: Vec<&str> =
                         _file_name.as_ref().unwrap().split('.').collect(); /* Reparsing the fileformat */
 
-                    let _extension = file_name_format[1];
+                    let _extension = file_name_format[file_name_format.len() - 1];
 
                     let mut list_image = ["fpt", "fgt", "fcp"];
 
@@ -139,7 +139,7 @@ fn upload_image(
                                 filename: "Failed to read file, please check format".to_string(),
                             },
                             meta: ResponseMeta {
-                                message: "Ok".to_string(),
+                                message: "Failed to read file, please check format".to_string(),
                             },
                         };
                         return respon;

@@ -132,7 +132,7 @@ fn upload_image(
                         list_image = ["fpt", "fgt", "fcp"];
                     }
 
-                    if !list_image.contains(&_extension) {
+                    if !list_image.contains(&_extension.to_lowercase().as_str()) {
                         respon = ResponseUpload {
                             success: false,
                             data: ResponseData {
